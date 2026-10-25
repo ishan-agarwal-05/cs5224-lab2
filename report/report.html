@@ -65,15 +65,25 @@ All data is encrypted in transit and at rest, every access is logged, and the da
 inside the country to meet data residency rules. National reports that combine hospitals only use
 aggregated data.</p>
 
-<p><b>Scaling architecture.</b> I would scale horizontally with auto scaling instead of moving to a bigger
-server. The web and API layer is kept stateless and runs as several instances or containers behind a load
-balancer, spread over more than one availability zone. An auto scaling group adds instances when CPU
-usage or request count goes up during an outbreak and removes them when demand drops, so the extra
-capacity is only paid for while it is needed. Heavy analytics jobs are put on a queue and processed by a
-separate pool of workers (for example a Spark cluster) that scales with the length of the queue. This
-stops a spike in report requests from slowing down the normal dashboards. To scale nationally I would
-partition the data by hospital and region, deploy the platform in more than one region if needed, and
-keep a second region for disaster recovery.</p>
+<p><b>Scaling architecture.</b> I would combine three of the scaling architectures from the lectures.</p>
+<ul>
+  <li><b>Workload distribution with a load balancer.</b> The web and API layer is kept stateless and runs as
+  several copies behind a load balancer, spread over more than one availability zone. The load balancer
+  spreads requests across the copies and stops sending traffic to one that fails.</li>
+  <li><b>Dynamic scalability, using horizontal scaling.</b> An automated scaling listener watches CPU usage
+  and request count. During an outbreak it adds more instances, and it removes them when demand drops, so
+  the extra capacity is only paid for while it is needed. I prefer horizontal scaling to vertical scaling
+  here because a single server can only be made so big, and adding copies does not need any downtime.
+  Heavy analytics jobs go on a queue and are processed by a separate pool of workers (for example a Spark
+  cluster) that grows with the length of the queue. This way a spike in report requests does not slow
+  down the normal dashboards.</li>
+  <li><b>Cloud bursting.</b> Each hospital's private environment handles its own routine reporting. When an
+  outbreak pushes demand past what the private side can handle, the extra work bursts out to the public
+  cloud. Only pseudonymised data is allowed to burst, so the governance rules still hold.</li>
+</ul>
+
+<p>To scale nationally I would partition the data by hospital and region, deploy the platform in more than
+one cloud region if needed, and keep a second region for disaster recovery.</p>
 
 <p>The downside is that a hybrid setup is harder to operate and depends on the network link between each
 hospital and the cloud. I still think it is the right choice here. A fully private setup would struggle
@@ -283,13 +293,16 @@ the spec only asks for the analysis to run on the cloud.</p>
 
 <h2>AI use declaration</h2>
 
-<p>I used AI tools in this lab. I used Manus AI to help me understand the requirements, draft the Part 1
-answers, write and debug the frontend, backend and Spark code, set up and run the Glue job from my own AWS
-session, check the results and take the screenshots. I then used Claude to rewrite the report text and
-layout. I am responsible for everything in this submission.</p>
+<p>I used AI tools in this lab as a helper, not to do the lab for me. I worked through every part myself,
+and used Manus AI alongside me throughout. It helped me understand the requirements, think through and
+draft the Part 1 answers, write and debug the frontend, backend and Spark code, set up and run the Glue
+job in my AWS account, check the results and capture the screenshots. Near the end I used Claude to check
+and grade my work against the lab specification, rework the report layout and edit the wording. I am
+responsible for everything in this submission.</p>
 
 <h2>References</h2>
 <ol>
+  <li>T. Erl, Z. Mahmood and R. Puttini, Cloud Computing: Concepts, Technology &amp; Architecture, Prentice Hall, 2013. Source of the workload distribution, dynamic scalability and cloud bursting architectures used in Part 1(a).</li>
   <li>NIST SP 800-145, The NIST Definition of Cloud Computing. https://csrc.nist.gov/pubs/sp/800/145/final</li>
   <li>Stanford SNAP, Social circles: Twitter. https://snap.stanford.edu/data/egonets-Twitter.html</li>
   <li>AWS Glue Developer Guide, Configuring job properties for Spark jobs. https://docs.aws.amazon.com/glue/latest/dg/add-job.html</li>
