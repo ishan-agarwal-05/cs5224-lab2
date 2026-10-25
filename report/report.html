@@ -46,80 +46,97 @@
 
 <h3>(a) Healthcare analytics SaaS for multiple hospitals</h3>
 
-<p><b>Deployment model.</b> I would use a hybrid cloud. Each hospital keeps its identifiable patient
-records in its own private cloud or on-premises system, and the shared analytics platform runs on a
-public cloud provider.</p>
-
-<p>Before any data leaves a hospital, an export service on the hospital side removes the fields the
-analytics do not need and replaces patient identifiers with pseudonyms. Only this reduced data is sent
-to the public cloud. The table that maps a pseudonym back to a real patient never leaves the hospital.
-I chose this split because the strict governance requirement is mainly about identifiable data, and that
-data stays under each hospital's control. The analytics part is what needs to grow quickly, and that is
-where public cloud is useful. If the hospitals can agree on common rules for ownership and access, the
-shared platform could also be run as a community cloud that only healthcare organisations use. I would
-still keep the identifiable data private in that case.</p>
-
-<p>Inside the SaaS, each hospital is a separate tenant with its own encryption keys and access roles.
-The tenant is checked on the server for every query, so one hospital cannot see another hospital's data.
-All data is encrypted in transit and at rest, every access is logged, and the data is stored in a region
-inside the country to meet data residency rules. National reports that combine hospitals only use
-aggregated data.</p>
-
-<p><b>Scaling architecture.</b> I would combine three of the scaling architectures from the lectures.</p>
+<p><b>Deployment model.</b> I would use a hybrid cloud made up of three deployment models.</p>
 <ul>
-  <li><b>Workload distribution with a load balancer.</b> The web and API layer is kept stateless and runs as
-  several copies behind a load balancer, spread over more than one availability zone. The load balancer
-  spreads requests across the copies and stops sending traffic to one that fails.</li>
-  <li><b>Dynamic scalability, using horizontal scaling.</b> An automated scaling listener watches CPU usage
-  and request count. During an outbreak it adds more instances, and it removes them when demand drops, so
-  the extra capacity is only paid for while it is needed. I prefer horizontal scaling to vertical scaling
-  here because a single server can only be made so big, and adding copies does not need any downtime.
-  Heavy analytics jobs go on a queue and are processed by a separate pool of workers (for example a Spark
-  cluster) that grows with the length of the queue. This way a spike in report requests does not slow
-  down the normal dashboards.</li>
-  <li><b>Cloud bursting.</b> Each hospital's private environment handles its own routine reporting. When an
-  outbreak pushes demand past what the private side can handle, the extra work bursts out to the public
-  cloud. Only pseudonymised data is allowed to burst, so the governance rules still hold.</li>
+  <li><b>Private cloud at each hospital.</b> Identifiable patient records stay in each hospital's own
+  private cloud. This gives the hospital the highest level of control over its most sensitive data.</li>
+  <li><b>Community cloud for the shared SaaS.</b> The analytics SaaS runs on a community cloud that only
+  the participating hospitals use. The hospitals share the same regulatory requirements, and healthcare is
+  one of the typical community cloud examples from the lectures. It costs less than every hospital
+  building its own private platform, access is limited to member hospitals, and there is one agreed
+  governance structure for managing it.</li>
+  <li><b>Public cloud for extra capacity.</b> The public cloud is only used to absorb demand spikes,
+  through cloud bursting (explained below).</li>
 </ul>
 
-<p>To scale nationally I would partition the data by hospital and region, deploy the platform in more than
-one cloud region if needed, and keep a second region for disaster recovery.</p>
+<p>Before any data leaves a hospital, an export service removes the fields the analytics do not need and
+replaces patient identifiers with pseudonyms. The table that maps a pseudonym back to a real patient never
+leaves the hospital. This means the community cloud only holds pseudonymised data, and only pseudonymised
+data can ever burst to the public cloud. All of the clouds would be located in the same country, or on a
+sovereign cloud, so the data stays within national borders.</p>
 
-<p>The downside is that a hybrid setup is harder to operate and depends on the network link between each
-hospital and the cloud. I still think it is the right choice here. A fully private setup would struggle
-to handle outbreak spikes without buying a lot of spare hardware, and putting all raw patient data in a
-public cloud would make the governance requirement much harder to meet.</p>
+<p>The SaaS is multi-tenant, with each hospital as one tenant. Tenant isolation makes sure a hospital
+cannot see another hospital's data or configuration, and I would use data tier isolation by giving each
+hospital its own database instead of shared tables. Data is encrypted in transit and at rest, and every
+access is logged so that a cloud auditor can check compliance. National reports that combine hospitals
+only use aggregated data.</p>
+
+<p><b>Scaling architecture.</b> I would combine three of the resource organisation architectures from
+the lectures.</p>
+<ul>
+  <li><b>Workload distribution with service load balancing.</b> The web and API services are stateless and
+  replicated on several virtual servers, with an independent load balancer in front (for example an AWS
+  Application Load Balancer). The load balancer spreads requests across the copies and only sends traffic
+  to healthy ones.</li>
+  <li><b>Dynamic scalability using dynamic horizontal scaling.</b> An automated scaling listener watches
+  request count and CPU usage. When an outbreak pushes these past a set threshold, more copies of the
+  service are added from the resource pool, and they are removed when demand drops. I prefer horizontal
+  scaling here because one server can only be made so big. Heavy analytics jobs go on a queue and run on
+  a separate worker pool (for example a Spark cluster) that scales the same way, so a spike in report
+  requests does not slow down the normal dashboards. The database is harder to scale out, so for it I
+  would use dynamic vertical scaling and give the database server more CPU and memory when it is under
+  load.</li>
+  <li><b>Cloud bursting.</b> If the community cloud reaches its capacity threshold during a large
+  outbreak, the automated scaling listener bursts out to redundant copies of the analytics service that
+  are already deployed on the public cloud. When demand falls they burst back in and the public cloud
+  resources are released. Resource replication keeps the state on both sides in sync.</li>
+</ul>
+
+<p>To scale nationally, each new hospital joins as another tenant and the data is partitioned by hospital
+and region. The platform can be deployed in more regions if needed, with a second region kept for
+disaster recovery.</p>
+
+<p>The downside is that a hybrid of three clouds is harder to operate and needs reliable network links
+between them. I still think it is the right choice. A purely private setup could only handle outbreak
+spikes by buying a lot of hardware that sits idle most of the time, and putting all the raw patient data
+on a public cloud would make the governance requirement much harder to meet.</p>
 
 <h3>(b) Modernising a bank's legacy application</h3>
 
-<p><b>Service model.</b> I would use PaaS. The bank wants to modernise the application, not only move it,
-and PaaS fits that best. With a managed application platform (for example AWS Elastic Beanstalk or ECS
-on Fargate) and a managed database (for example Amazon RDS), the provider handles the servers, operating
-system patching, scaling and backups. The bank's developers can spend their time breaking the old
-application into smaller services instead of looking after infrastructure. The bank still controls its
-own code, data, user access and configuration, which it needs for compliance.</p>
+<p><b>Service model.</b> I would use PaaS. In the lectures PaaS is the model where the consumer deploys its
+own application onto a platform that already has the database, frameworks and middleware ready. That
+matches what the bank wants, which is to modernise its own application rather than replace it with
+someone else's. With a managed platform (for example AWS Elastic Beanstalk or ECS on Fargate) and a
+managed database (for example Amazon RDS), the provider handles the servers, operating system patching,
+scaling and backups. The bank's developers can spend their time breaking the old application into smaller
+services, and the bank still controls its own code, data, user access and configuration.</p>
 
-<p>I would not use IaaS as the main model because the bank would still have to manage and patch its own
-operating systems, which is a large part of what makes the legacy setup expensive. IaaS could be used for
-a short time for legacy components that cannot be changed yet (a "lift and shift" step). SaaS does not
-fit because this is the bank's own application. A ready-made SaaS product would not give the bank enough
-control over how its sensitive data is processed and stored.</p>
+<p>I compared it with the other options using the pros and cons from the lectures. Staying on-premise
+gives the most flexibility but has a long time-to-market, which is already the problem with the legacy
+system. IaaS removes the need to buy hardware, but the bank would still manage and patch its own operating
+systems and middleware, and privacy is listed as a concern. IaaS could still be used for a short time for
+legacy parts that cannot be changed yet. SaaS has the lowest flexibility and is for using a provider's
+application, not running the bank's own. The main drawback of PaaS is vendor lock-in. I would reduce it by
+packaging the services in containers and using standard databases, so the bank could move to another
+provider later.</p>
 
-<p><b>Deployment model.</b> I would use a hybrid cloud. The most sensitive data, such as customer account
-records and the encryption keys, stays in the bank's private cloud or data centre where the bank has full
-control and can show the regulator exactly where it is. The modernised application services that do not
-need to store that data run on the public cloud PaaS and connect to the private side over a private link
-such as AWS Direct Connect or a site-to-site VPN. I did not go fully public because some regulators
-expect certain data to stay on premises. I also did not go fully private, because then the bank has to
-build and run its own platform and loses most of the benefit of PaaS.</p>
+<p><b>Deployment model.</b> I would use a hybrid cloud, with the sensitive data on a private cloud and the
+modernised application on a public cloud PaaS. This is the same split the lectures use as the example for
+hybrid cloud. The most sensitive data, such as customer account records and encryption keys, stays in the
+bank's on-site private cloud. There the bank has full control and can show the regulator exactly where the
+data is. The new application services run on the public cloud PaaS inside a virtual private cloud, so they
+are isolated from other customers, and they connect to the private side over a dedicated link (for example
+AWS Direct Connect). Fully public would put the sensitive data outside the bank's control. Fully private
+would mean the bank has to build and run its own platform, which loses most of the benefit of PaaS.</p>
 
-<p>For compliance I would choose a provider and region that the bank's regulator accepts (in Singapore
-this means following the MAS Technology Risk Management Guidelines), encrypt data with keys the bank
-manages, use least-privilege IAM with MFA, and keep audit logs of all access. I would migrate one part of
-the legacy system at a time and keep the old system running until each new part has been tested, so
-there is always a way to roll back.</p>
+<p>For compliance I would choose a PaaS provider whose services are physically hosted in the same country
+as the bank. The lectures show this as a way to meet legal requirements for data storage. Data would be
+encrypted with keys the bank manages, access would use least privilege and MFA, and all access would be
+logged so an independent cloud auditor can check the setup against the regulator's rules (in Singapore,
+the MAS Technology Risk Management Guidelines). I would migrate one part of the legacy system at a time
+and keep the old system running until each new part has been tested, so there is always a way to roll
+back.</p>
 
-<div class="newpage"></div>
 <h2>Part 2: Data Analyse It!</h2>
 
 <h3>Overview</h3>
@@ -293,16 +310,16 @@ the spec only asks for the analysis to run on the cloud.</p>
 
 <h2>AI use declaration</h2>
 
-<p>I used AI tools in this lab as a helper, not to do the lab for me. I worked through every part myself,
-and used Manus AI alongside me throughout. It helped me understand the requirements, think through and
-draft the Part 1 answers, write and debug the frontend, backend and Spark code, set up and run the Glue
-job in my AWS account, check the results and capture the screenshots. Near the end I used Claude to check
-and grade my work against the lab specification, rework the report layout and edit the wording. I am
-responsible for everything in this submission.</p>
+<p>I worked on this lab myself, with guidance and help from AI tools along the way. I used Manus AI to help
+me understand the requirements, draft the Part 1 answers, write and debug the frontend, backend and Spark
+code, and set up, run and check the Glue job in my AWS account. At the end I used Claude to check and grade
+my report against the lab specification, rework the layout and edit the wording. I am responsible for
+everything in this submission.</p>
 
 <h2>References</h2>
 <ol>
-  <li>T. Erl, Z. Mahmood and R. Puttini, Cloud Computing: Concepts, Technology &amp; Architecture, Prentice Hall, 2013. Source of the workload distribution, dynamic scalability and cloud bursting architectures used in Part 1(a).</li>
+  <li>A. Gopalan, CS5224 lecture slides, Lecture 2 (Concepts and Models), Lecture 3 (Cloud Architectures) and Lecture 5 (Virtualisation and Multitenancy), NUS, 2026.</li>
+  <li>T. Erl, Z. Mahmood and R. Puttini, Cloud Computing: Concepts, Technology &amp; Architecture, Prentice Hall, 2013. Chapters 4 and 11.</li>
   <li>NIST SP 800-145, The NIST Definition of Cloud Computing. https://csrc.nist.gov/pubs/sp/800/145/final</li>
   <li>Stanford SNAP, Social circles: Twitter. https://snap.stanford.edu/data/egonets-Twitter.html</li>
   <li>AWS Glue Developer Guide, Configuring job properties for Spark jobs. https://docs.aws.amazon.com/glue/latest/dg/add-job.html</li>
