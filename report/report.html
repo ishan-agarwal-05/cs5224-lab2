@@ -15,6 +15,7 @@
   th, td { border: 0.5pt solid #000; padding: 3pt 6pt; vertical-align: top; text-align: left; }
   th { font-weight: bold; }
   td.n { text-align: right; }
+  a { color: #000; }
   code { font-family: "Courier New", monospace; font-size: 10.5pt; }
   pre { font-family: "Courier New", monospace; font-size: 10pt;
         line-height: 1.25; border: 0.5pt solid #808080; padding: 5pt 7pt; margin: 4pt 0 10pt;
@@ -37,7 +38,8 @@
 <div class="info">
 <p><b>Name:</b> Ishan Agarwal</p>
 <p><b>Student ID:</b> A0284673R</p>
-<p style="margin-bottom:10pt"><b>Cloud provider for Part 2:</b> AWS, region ap-southeast-1 (Singapore)</p>
+<p><b>Cloud provider for Part 2:</b> AWS, region ap-southeast-1 (Singapore)</p>
+<p style="margin-bottom:10pt"><b>Source code:</b> <a href="https://github.com/ishan-agarwal-05/cs5224-lab2">https://github.com/ishan-agarwal-05/cs5224-lab2</a></p>
 </div>
 
 <h2>Part 1: Cloud Services</h2>
@@ -114,7 +116,9 @@ there is always a way to roll back.</p>
 
 <p>I used AWS for this part. The dataset and my PySpark script are stored in an S3 bucket, and the
 analysis runs as an AWS Glue Spark job. The backend is written in Python and the frontend is a plain
-HTML and JavaScript page. Figure 1 shows how the parts connect.</p>
+HTML and JavaScript page. Figure 1 shows how the parts connect. All of the code is on GitHub at
+<a href="https://github.com/ishan-agarwal-05/cs5224-lab2">https://github.com/ishan-agarwal-05/cs5224-lab2</a>,
+and the README there explains how to run it.</p>
 
 <figure>
 <svg viewBox="0 0 680 250" width="100%" xmlns="http://www.w3.org/2000/svg" font-size="12">
@@ -294,5 +298,6 @@ layout. I am responsible for everything in this submission.</p>
 
 <div class="newpage"></div>
 <h2>Appendix A: Spark job (<code>analysis/spark_job.py</code>)</h2>
-<p>This is the script that was uploaded to S3 and run by the Glue job.</p>
+<p>This is the script that was uploaded to S3 and run by the Glue job. The backend, frontend and job runner
+code are in the GitHub repository linked above.</p>
 <pre class="src"><!--SPARK--></pre>
