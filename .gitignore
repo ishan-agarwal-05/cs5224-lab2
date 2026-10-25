@@ -1,0 +1,23 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+
+# course material, not mine to redistribute
+twitter_combined.txt
+Lab 02 - Specification.pdf
+
+# old notes and the previous report build
+handover-notes/
+report/old-typst/
+
+# EMR/Lambda alternative that was never deployed
+aws/cloud.py
+aws/template.json
+aws/web.zip
+aws/DEPLOYMENT.md
+lab2-cloud-output.zip
+
+# Spark bookkeeping files
+*.crc
+_SUCCESS

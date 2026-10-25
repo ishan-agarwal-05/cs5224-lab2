@@ -1,0 +1,17 @@
+{
+  "raw_lines": 2426143,
+  "blank_lines": 0,
+  "malformed_lines": 0,
+  "self_loop_lines": 22,
+  "valid_nonself_lines": 2426121,
+  "unique_edges": 1768135,
+  "unique_users": 81306,
+  "duplicate_edges_removed": 657986,
+  "total_followers": 1768135,
+  "total_followees": 1768135,
+  "input_sha256": "0246d0cae6b4b3c874c968e5caed5e08753a98ce36be2ddb861fce982afdf92c",
+  "input_bytes": 44647787,
+  "engine": "Python independent verification (not Spark/cloud evidence)",
+  "generated_at": "2026-10-11T10:33:22.519369+00:00",
+  "cleaning_policy": "Numeric directed edges; canonical IDs; drop blanks, malformed rows, self-links; deduplicate (source,target)."
+}

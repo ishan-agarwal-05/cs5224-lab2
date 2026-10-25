@@ -1,0 +1,15 @@
+test_api (test_lab2.LabTests.test_api) ... ok
+test_cloud_execution_and_audit (test_lab2.LabTests.test_cloud_execution_and_audit) ... ok
+test_default_api_uses_cloud_output (test_lab2.LabTests.test_default_api_uses_cloud_output) ... ok
+test_dirty_graph (test_lab2.LabTests.test_dirty_graph) ... ok
+test_every_cloud_result_matches_reference (test_lab2.LabTests.test_every_cloud_result_matches_reference) ... ok
+test_every_spark_result_matches_reference (test_lab2.LabTests.test_every_spark_result_matches_reference) ... ok
+test_lambda_adapter (test_lab2.LabTests.test_lambda_adapter) ... ok
+test_parse (test_lab2.LabTests.test_parse) ... ok
+test_spark_audit_matches_reference (test_lab2.LabTests.test_spark_audit_matches_reference) ... ok
+test_unavailable_results (test_lab2.LabTests.test_unavailable_results) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.856s
+
+OK

@@ -1,0 +1,298 @@
+<meta charset="utf-8">
+<title>CS5224 Lab 2</title>
+<style>
+  @page { size: A4 portrait; margin: 22mm 20mm 20mm 20mm; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Times New Roman", Times, serif;
+         font-size: 12pt; line-height: 1.28; color: #000; margin: 0; }
+  p { margin: 0 0 8pt; }
+  h1 { font-size: 16pt; font-weight: bold; margin: 0 0 2pt; }
+  h2 { font-size: 14pt; font-weight: bold; margin: 18pt 0 6pt; }
+  h3 { font-size: 12pt; font-weight: bold; margin: 13pt 0 4pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  table { page-break-inside: avoid; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 11pt; }
+  th, td { border: 0.5pt solid #000; padding: 3pt 6pt; vertical-align: top; text-align: left; }
+  th { font-weight: bold; }
+  td.n { text-align: right; }
+  code { font-family: "Courier New", monospace; font-size: 10.5pt; }
+  pre { font-family: "Courier New", monospace; font-size: 10pt;
+        line-height: 1.25; border: 0.5pt solid #808080; padding: 5pt 7pt; margin: 4pt 0 10pt;
+        white-space: pre-wrap; }
+  pre.src { font-size: 8.5pt; line-height: 1.2; border: none; padding: 0; }
+  .info p { margin: 0 0 2pt; }
+  figure { margin: 4pt 0 12pt; page-break-inside: avoid; }
+  figure img { width: 100%; border: 0.5pt solid #808080; display: block; }
+  figcaption { font-size: 10.5pt; margin-top: 3pt; }
+  .pair { display: flex; gap: 10pt; page-break-inside: avoid; margin: 4pt 0 12pt; }
+  .pair figure { flex: 1; margin: 0; }
+  .newpage { page-break-before: always; }
+  .wc { font-size: 10.5pt; }
+  svg text { font-family: "Times New Roman", Times, serif; }
+</style>
+
+<h1>CS5224 Cloud Computing, Lab 2</h1>
+<p style="margin-bottom:12pt">Cloud Services</p>
+
+<div class="info">
+<p><b>Name:</b> Ishan Agarwal</p>
+<p><b>Student ID:</b> A0284673R</p>
+<p style="margin-bottom:10pt"><b>Cloud provider for Part 2:</b> AWS, region ap-southeast-1 (Singapore)</p>
+</div>
+
+<h2>Part 1: Cloud Services</h2>
+
+<h3>(a) Healthcare analytics SaaS for multiple hospitals</h3>
+
+<p><b>Deployment model.</b> I would use a hybrid cloud. Each hospital keeps its identifiable patient
+records in its own private cloud or on-premises system, and the shared analytics platform runs on a
+public cloud provider.</p>
+
+<p>Before any data leaves a hospital, an export service on the hospital side removes the fields the
+analytics do not need and replaces patient identifiers with pseudonyms. Only this reduced data is sent
+to the public cloud. The table that maps a pseudonym back to a real patient never leaves the hospital.
+I chose this split because the strict governance requirement is mainly about identifiable data, and that
+data stays under each hospital's control. The analytics part is what needs to grow quickly, and that is
+where public cloud is useful. If the hospitals can agree on common rules for ownership and access, the
+shared platform could also be run as a community cloud that only healthcare organisations use. I would
+still keep the identifiable data private in that case.</p>
+
+<p>Inside the SaaS, each hospital is a separate tenant with its own encryption keys and access roles.
+The tenant is checked on the server for every query, so one hospital cannot see another hospital's data.
+All data is encrypted in transit and at rest, every access is logged, and the data is stored in a region
+inside the country to meet data residency rules. National reports that combine hospitals only use
+aggregated data.</p>
+
+<p><b>Scaling architecture.</b> I would scale horizontally with auto scaling instead of moving to a bigger
+server. The web and API layer is kept stateless and runs as several instances or containers behind a load
+balancer, spread over more than one availability zone. An auto scaling group adds instances when CPU
+usage or request count goes up during an outbreak and removes them when demand drops, so the extra
+capacity is only paid for while it is needed. Heavy analytics jobs are put on a queue and processed by a
+separate pool of workers (for example a Spark cluster) that scales with the length of the queue. This
+stops a spike in report requests from slowing down the normal dashboards. To scale nationally I would
+partition the data by hospital and region, deploy the platform in more than one region if needed, and
+keep a second region for disaster recovery.</p>
+
+<p>The downside is that a hybrid setup is harder to operate and depends on the network link between each
+hospital and the cloud. I still think it is the right choice here. A fully private setup would struggle
+to handle outbreak spikes without buying a lot of spare hardware, and putting all raw patient data in a
+public cloud would make the governance requirement much harder to meet.</p>
+
+<h3>(b) Modernising a bank's legacy application</h3>
+
+<p><b>Service model.</b> I would use PaaS. The bank wants to modernise the application, not only move it,
+and PaaS fits that best. With a managed application platform (for example AWS Elastic Beanstalk or ECS
+on Fargate) and a managed database (for example Amazon RDS), the provider handles the servers, operating
+system patching, scaling and backups. The bank's developers can spend their time breaking the old
+application into smaller services instead of looking after infrastructure. The bank still controls its
+own code, data, user access and configuration, which it needs for compliance.</p>
+
+<p>I would not use IaaS as the main model because the bank would still have to manage and patch its own
+operating systems, which is a large part of what makes the legacy setup expensive. IaaS could be used for
+a short time for legacy components that cannot be changed yet (a "lift and shift" step). SaaS does not
+fit because this is the bank's own application. A ready-made SaaS product would not give the bank enough
+control over how its sensitive data is processed and stored.</p>
+
+<p><b>Deployment model.</b> I would use a hybrid cloud. The most sensitive data, such as customer account
+records and the encryption keys, stays in the bank's private cloud or data centre where the bank has full
+control and can show the regulator exactly where it is. The modernised application services that do not
+need to store that data run on the public cloud PaaS and connect to the private side over a private link
+such as AWS Direct Connect or a site-to-site VPN. I did not go fully public because some regulators
+expect certain data to stay on premises. I also did not go fully private, because then the bank has to
+build and run its own platform and loses most of the benefit of PaaS.</p>
+
+<p>For compliance I would choose a provider and region that the bank's regulator accepts (in Singapore
+this means following the MAS Technology Risk Management Guidelines), encrypt data with keys the bank
+manages, use least-privilege IAM with MFA, and keep audit logs of all access. I would migrate one part of
+the legacy system at a time and keep the old system running until each new part has been tested, so
+there is always a way to roll back.</p>
+
+<div class="newpage"></div>
+<h2>Part 2: Data Analyse It!</h2>
+
+<h3>Overview</h3>
+
+<p>I used AWS for this part. The dataset and my PySpark script are stored in an S3 bucket, and the
+analysis runs as an AWS Glue Spark job. The backend is written in Python and the frontend is a plain
+HTML and JavaScript page. Figure 1 shows how the parts connect.</p>
+
+<figure>
+<svg viewBox="0 0 680 250" width="100%" xmlns="http://www.w3.org/2000/svg" font-size="12">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
+  <rect x="10" y="10" width="660" height="110" fill="none" stroke="#000" stroke-dasharray="4 3"/>
+  <text x="18" y="27" font-size="11">AWS, ap-southeast-1</text>
+  <rect x="40" y="40" width="200" height="62" fill="none" stroke="#000"/>
+  <text x="140" y="63" text-anchor="middle" font-weight="bold">Amazon S3 bucket</text>
+  <text x="140" y="81" text-anchor="middle" font-size="11">input/, scripts/, results/</text>
+  <rect x="440" y="40" width="200" height="62" fill="none" stroke="#000"/>
+  <text x="540" y="63" text-anchor="middle" font-weight="bold">AWS Glue job (Spark)</text>
+  <text x="540" y="81" text-anchor="middle" font-size="11">3 G.1X workers, 8 partitions</text>
+  <line x1="240" y1="60" x2="438" y2="60" stroke="#000" marker-end="url(#a)"/>
+  <text x="340" y="54" text-anchor="middle" font-size="11">reads dataset and script</text>
+  <line x1="440" y1="86" x2="242" y2="86" stroke="#000" marker-end="url(#a)"/>
+  <text x="340" y="100" text-anchor="middle" font-size="11">writes 8 CSV result files</text>
+  <rect x="20" y="170" width="180" height="62" fill="none" stroke="#000"/>
+  <text x="110" y="193" text-anchor="middle" font-weight="bold">Job runner</text>
+  <text x="110" y="211" text-anchor="middle" font-size="11">glue_cloud.py (CloudShell)</text>
+  <rect x="250" y="170" width="180" height="62" fill="none" stroke="#000"/>
+  <text x="340" y="193" text-anchor="middle" font-weight="bold">API server</text>
+  <text x="340" y="211" text-anchor="middle" font-size="11">server.py (Python)</text>
+  <rect x="490" y="170" width="170" height="62" fill="none" stroke="#000"/>
+  <text x="575" y="193" text-anchor="middle" font-weight="bold">Frontend</text>
+  <text x="575" y="211" text-anchor="middle" font-size="11">HTML + JavaScript</text>
+  <line x1="90" y1="168" x2="90" y2="104" stroke="#000" marker-end="url(#a)" marker-start="url(#a)"/>
+  <text x="96" y="140" font-size="11">upload input,</text>
+  <text x="96" y="153" font-size="11">download results</text>
+  <line x1="190" y1="168" x2="470" y2="104" stroke="#000" marker-end="url(#a)"/>
+  <text x="372" y="150" font-size="11">start job, check status</text>
+  <line x1="200" y1="201" x2="248" y2="201" stroke="#000" marker-end="url(#a)"/>
+  <text x="224" y="226" text-anchor="middle" font-size="11">results</text>
+  <line x1="430" y1="201" x2="488" y2="201" stroke="#000" marker-end="url(#a)" marker-start="url(#a)"/>
+  <text x="459" y="226" text-anchor="middle" font-size="11">JSON</text>
+</svg>
+<figcaption>Figure 1: How the frontend, backend and Glue job fit together.</figcaption>
+</figure>
+
+<p>The steps for one run are:</p>
+<ol>
+  <li>The job runner uploads <code>twitter_combined.txt</code> and <code>spark_job.py</code> to the S3 bucket and creates the Glue job.</li>
+  <li>It starts the Glue job. Glue gives the job three workers and runs the Spark script on the dataset in S3.</li>
+  <li>The Spark job writes the counts back to S3 as 8 CSV files, plus one small JSON file with totals.</li>
+  <li>The job runner downloads the result files and checks them. The API server loads them and the frontend asks the API for the numbers.</li>
+</ol>
+
+<h3>Cleaning the dataset</h3>
+
+<p>Each line <code>A B</code> means A follows B, so A gets one followee and B gets one follower. The spec
+says the file has not been cleaned, so I checked it before writing the job. There are no blank or
+malformed lines, but there are a lot of repeated lines and a few lines where a user follows themselves.
+I made these decisions:</p>
+<ul>
+  <li>If the same line <code>A B</code> appears more than once, it is counted once. <code>A B</code> and <code>B A</code> are different relationships and both count.</li>
+  <li>Lines where A and B are the same user are dropped, because following yourself is not a real follow. None of these 22 lines involve the two users the lab asks about, so this choice does not change their answers.</li>
+  <li>User IDs are kept as strings so very long IDs cannot lose precision, and leading zeros are stripped so <code>0123</code> and <code>123</code> count as the same user.</li>
+</ul>
+
+<table>
+  <tr><th>Item</th><th>Count</th></tr>
+  <tr><td>Lines in the file</td><td class="n">2,426,143</td></tr>
+  <tr><td>Blank or malformed lines</td><td class="n">0</td></tr>
+  <tr><td>Self-follow lines removed</td><td class="n">22</td></tr>
+  <tr><td>Duplicate lines removed</td><td class="n">657,986</td></tr>
+  <tr><td>Unique follow relationships left</td><td class="n">1,768,135</td></tr>
+  <tr><td>Distinct users</td><td class="n">81,306</td></tr>
+</table>
+
+<h3>Results</h3>
+
+<p>These are the results for the two users in the spec, in the required format:</p>
+<pre>214328887 has 180 followers
+214328887 has 214 followees
+107830991 has 180 followers
+107830991 has 157 followees</pre>
+
+<figure>
+<img src="../evidence/dashboard.png">
+<figcaption>Figure 2: The frontend showing both users. The numbers come from the backend API, which serves the output of the Glue job.</figcaption>
+</figure>
+
+<p>This is the raw response from the backend endpoint that the frontend calls for these two users:</p>
+<pre>GET /api/users?ids=214328887,107830991
+
+{"users": [{"user_id": "214328887", "followers": 180, "followees": 214},
+           {"user_id": "107830991", "followers": 180, "followees": 157}],
+ "missing": []}</pre>
+
+<h3>1. Front-end</h3>
+
+<p>The frontend is one HTML page with CSS and plain JavaScript. The backend serves the page, and the
+script uses <code>fetch</code> to call the backend's JSON API, for example
+<code>/api/users?ids=214328887,107830991</code>. It shows "UserID has N followers/followees" for both
+users. It also has a searchable, paged table of all users. <span class="wc">(49 words)</span></p>
+
+<h3>2. Back-end</h3>
+
+<p>The backend is written in Python and has two parts. The job runner (<code>glue_cloud.py</code>, run in
+AWS CloudShell with boto3) uploads the dataset and Spark script to S3, creates and starts the AWS Glue job,
+checks its status until it succeeds, then downloads the result files from S3 and verifies them. The API
+server (<code>server.py</code>, Python standard library) loads these results, checks that the totals add
+up, keeps the counts in memory, and serves them as JSON through <code>/api/users</code> and
+<code>/api/summary</code>. It also serves the frontend files. <span class="wc">(87 words)</span></p>
+
+<h3>3. Data analysis component</h3>
+
+<p>For the analysis I used AWS Glue, which runs Apache Spark jobs without me having to set up a cluster.
+I first tried EMR Serverless, but my account is on the AWS free plan and the EMR API returned
+<code>SubscriptionRequiredException</code>. Glue was available on the same account and also runs Spark, so
+I switched to it. The docstring at the top of my script still mentions EMR Serverless from that first
+attempt.</p>
+
+<p>The job settings were Glue 5.0 (Spark 3.5.4), 3 workers of type G.1X (4 vCPU and 16 GB memory each),
+8 partitions, a 10 minute timeout and no automatic retries. The input path and output path in S3 are
+passed to the script as job arguments. The run on 11 October 2026 succeeded on the first attempt and took
+115 seconds of execution time. Glue reported 347 DPU-seconds, which at the Singapore rate of US$0.44 per
+DPU-hour is about US$0.04.</p>
+
+<p>The full script is in Appendix A. It works in the same map and reduce style as MapReduce:</p>
+<ol>
+  <li><b>Read and split.</b> Spark reads the file from S3 one line at a time and spreads the lines over 8 partitions, so the workers process them in parallel.</li>
+  <li><b>Parse and clean</b> (<code>clean_edges</code>). Each line is checked with a regular expression and split into a source and destination ID. Malformed lines and self-follows are filtered out, then <code>dropDuplicates</code> removes repeated pairs. This step shuffles the data across workers, so a duplicate is removed even if its copies were in different partitions.</li>
+  <li><b>Map</b> (<code>count_users</code>). For each unique edge <code>A B</code> the job emits two records: <code>(A, followers=0, followees=1)</code> and <code>(B, followers=1, followees=0)</code>.</li>
+  <li><b>Reduce.</b> The records are grouped by user ID and the two columns are summed. A user who only appears on one side of every edge still gets a row, with 0 on the other side.</li>
+  <li><b>Write.</b> The counts are written back to S3 as 8 CSV files, one per partition, plus a JSON file with the cleaning totals.</li>
+</ol>
+
+<p>The screenshots below show the job running on AWS.</p>
+
+<div class="pair">
+<figure><img src="../evidence/aws-s3-input.png"><figcaption>Figure 3: Dataset uploaded to <code>input/</code> in the S3 bucket.</figcaption></figure>
+<figure><img src="../evidence/aws-s3-script.png"><figcaption>Figure 4: Spark script uploaded to <code>scripts/</code> in the same bucket.</figcaption></figure>
+</div>
+
+<figure style="width:60%; margin-left:auto; margin-right:auto">
+<img src="../evidence/aws-glue-success.png">
+<figcaption>Figure 5: The Glue job run. It succeeded on the initial run with Glue 5.0, 3 G.1X workers and an execution time of 1 minute 55 seconds.</figcaption>
+</figure>
+
+<figure style="width:60%; margin-left:auto; margin-right:auto">
+<img src="../evidence/aws-glue-summary.png">
+<figcaption>Figure 6: Output of my job runner in CloudShell after the run finished, showing the run ID, settings and the counts for the two users.</figcaption>
+</figure>
+
+<div class="pair">
+<figure><img src="../evidence/aws-glue-code.png"><figcaption>Figure 7: The script in the Glue editor, showing the cleaning and deduplication step.</figcaption></figure>
+<figure><img src="../evidence/aws-glue-aggregation.png"><figcaption>Figure 8: The map and reduce step, where both directions are combined and summed per user.</figcaption></figure>
+</div>
+
+<h3>Checking the results</h3>
+
+<p>Before running on AWS I tested the same script with a local Spark install (<code>local[4]</code>, 8
+partitions). I also wrote a short plain Python version (<code>reference.py</code>) that uses a set to
+remove duplicates and a counter to count followers and followees. The Glue output matched it for all
+81,306 users. As a sanity check, the total number of followers and the total number of followees across
+all users are both 1,768,135, which is the number of unique edges. That has to be true because every edge
+adds exactly one follower and one followee.</p>
+
+<p>If I was doing this for real I would also host the API server on AWS (for example on Lambda behind API
+Gateway, reading the results straight from S3) instead of running it on my laptop. I left that out because
+the spec only asks for the analysis to run on the cloud.</p>
+
+<h2>AI use declaration</h2>
+
+<p>I used AI tools in this lab. I used Manus AI to help me understand the requirements, draft the Part 1
+answers, write and debug the frontend, backend and Spark code, set up and run the Glue job from my own AWS
+session, check the results and take the screenshots. I then used Claude to rewrite the report text and
+layout. I am responsible for everything in this submission.</p>
+
+<h2>References</h2>
+<ol>
+  <li>NIST SP 800-145, The NIST Definition of Cloud Computing. https://csrc.nist.gov/pubs/sp/800/145/final</li>
+  <li>Stanford SNAP, Social circles: Twitter. https://snap.stanford.edu/data/egonets-Twitter.html</li>
+  <li>AWS Glue Developer Guide, Configuring job properties for Spark jobs. https://docs.aws.amazon.com/glue/latest/dg/add-job.html</li>
+  <li>AWS Glue pricing. https://aws.amazon.com/glue/pricing/</li>
+</ol>
+
+<div class="newpage"></div>
+<h2>Appendix A: Spark job (<code>analysis/spark_job.py</code>)</h2>
+<p>This is the script that was uploaded to S3 and run by the Glue job.</p>
+<pre class="src"><!--SPARK--></pre>

@@ -1,0 +1,3 @@
+# Python 3.11/3.12 and Java 17 recommended for the tested Spark runtime.
+pyspark==3.5.5
+boto3>=1.35,<2

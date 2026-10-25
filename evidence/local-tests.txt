@@ -1,0 +1,12 @@
+test_api (test_lab2.LabTests.test_api) ... ok
+test_dirty_graph (test_lab2.LabTests.test_dirty_graph) ... ok
+test_every_spark_result_matches_reference (test_lab2.LabTests.test_every_spark_result_matches_reference) ... ok
+test_lambda_adapter (test_lab2.LabTests.test_lambda_adapter) ... ok
+test_parse (test_lab2.LabTests.test_parse) ... ok
+test_spark_audit_matches_reference (test_lab2.LabTests.test_spark_audit_matches_reference) ... ok
+test_unavailable_results (test_lab2.LabTests.test_unavailable_results) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.468s
+
+OK

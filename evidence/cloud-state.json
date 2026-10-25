@@ -1,0 +1,66 @@
+{
+  "bucket": "cs5224-lab2-a0284673r-350445708909-20261011",
+  "role": "cs5224-lab2-a0284673r-glue",
+  "job": "cs5224-lab2-a0284673r-twitter",
+  "region": "ap-southeast-1",
+  "account": "350445708909",
+  "input_sha256": "0246d0cae6b4b3c874c968e5caed5e08753a98ce36be2ddb861fce982afdf92c",
+  "results_prefix": "results/cloud-20261011",
+  "stage": "VERIFIED",
+  "role_arn": "arn:aws:iam::350445708909:role/cs5224-lab2-a0284673r-glue",
+  "created_at": "2026-10-11T11:17:27.547386+00:00",
+  "run_id": "jr_04b640eb2fc969d102b28194add478ba53968f60955ded4ab8b33ca72c4d086c",
+  "submitted_at": "2026-10-11T11:17:51.431221+00:00",
+  "job_run": {
+    "Id": "jr_04b640eb2fc969d102b28194add478ba53968f60955ded4ab8b33ca72c4d086c",
+    "Attempt": 0,
+    "JobName": "cs5224-lab2-a0284673r-twitter",
+    "JobMode": "SCRIPT",
+    "JobRunQueuingEnabled": false,
+    "StartedOn": "2026-10-11 11:17:51.405000+00:00",
+    "LastModifiedOn": "2026-10-11 11:19:54.514000+00:00",
+    "CompletedOn": "2026-10-11 11:19:54.514000+00:00",
+    "JobRunState": "SUCCEEDED",
+    "PredecessorRuns": [],
+    "AllocatedCapacity": 3,
+    "ExecutionTime": 115,
+    "Timeout": 10,
+    "MaxCapacity": 3.0,
+    "WorkerType": "G.1X",
+    "NumberOfWorkers": 3,
+    "LogGroupName": "/aws-glue/jobs",
+    "GlueVersion": "5.0",
+    "DPUSeconds": 347.0,
+    "ExecutionClass": "STANDARD"
+  },
+  "verified_users": 81306,
+  "required_users": {
+    "214328887": [
+      180,
+      214
+    ],
+    "107830991": [
+      180,
+      157
+    ]
+  },
+  "metadata": {
+    "blank_lines": 0,
+    "cleaning_policy": "Numeric directed edges; canonical IDs; drop blanks, malformed rows, self-links; deduplicate (source,target).",
+    "duplicate_edges_removed": 657986,
+    "engine": "Apache Spark",
+    "execution_mode": "cloud/distributed",
+    "input_uri": "s3://cs5224-lab2-a0284673r-350445708909-20261011/input/twitter_combined.txt",
+    "malformed_lines": 0,
+    "master": "custom:jes",
+    "partitions": 8,
+    "raw_lines": 2426143,
+    "self_loop_lines": 22,
+    "spark_version": "3.5.4-amzn-0",
+    "total_followees": 1768135,
+    "total_followers": 1768135,
+    "unique_edges": 1768135,
+    "unique_users": 81306,
+    "valid_nonself_lines": 2426121
+  }
+}
